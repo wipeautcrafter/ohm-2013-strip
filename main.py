@@ -352,34 +352,31 @@ class Watchdog:
         self.thread = threading.Thread(target=self.visualizer.run)
 
         while True:
-            try:
-                song = self.spotify.get_current_song()
-                self.visualizer.set_song(song)
+            song = self.spotify.get_current_song()
+            self.visualizer.set_song(song)
 
-                if song is None and self.song_id is not None:
-                    print("Playback paused.")
-                    self.visualizer.update(playing=False)
-                    self.song_id = None
+            if song is None and self.song_id is not None:
+                print("Playback paused.")
+                self.visualizer.update(playing=False)
+                self.song_id = None
 
-                elif song is not None and song["id"] != self.song_id:
-                    print(f"Now Playing: {song['name']} ({song['id']})")
-                    analysis = self.spotify.analyse_song(song["id"])
-                    sections = Sections(analysis["sections"]).sections
+            elif song is not None and song["id"] != self.song_id:
+                print(f"Now Playing: {song['name']} ({song['id']})")
+                analysis = self.spotify.analyse_song(song["id"])
+                sections = Sections(analysis["sections"]).sections
 
-                    print("Sections:")
-                    for s in sections:
-                        print(f"- {s['start']}: mode:{s['mode']} loudness:{s['loudness']} tempo:{s['tempo']} confidence:{s['confidence']}")
+                print("Sections:")
+                for s in sections:
+                    print(f"- {s['start']}: mode:{s['mode']} loudness:{s['loudness']} tempo:{s['tempo']} confidence:{s['confidence']}")
 
-                    self.visualizer.update(analysis["beats"], analysis["bars"], sections)
-                    self.song_id = song["id"]
+                self.visualizer.update(analysis["beats"], analysis["bars"], sections)
+                self.song_id = song["id"]
 
-                # start thread
-                if not self.thread.is_alive():
-                    self.thread.start()
+            # start thread
+            if not self.thread.is_alive():
+                self.thread.start()
 
-                time.sleep(2)
-            except Exception as e:
-                print("An error occured while running:\n", e)
+            time.sleep(2)
 
 
 if __name__ == "__main__":
