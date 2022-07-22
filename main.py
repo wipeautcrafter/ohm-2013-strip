@@ -17,7 +17,6 @@ class Spotify:
         self.current_analysis = None
 
     def get_current_song(self) -> None:
-        start_time = time.time()
         playback = self.spotify.current_playback()
 
         if playback is None or not playback["is_playing"] or playback["item"] is None or playback["item"]["id"] is None:
@@ -28,7 +27,7 @@ class Spotify:
             "name": playback["item"]["name"],
             "progress": playback["progress_ms"],
             "duration": playback["item"]["duration_ms"],
-            "timestamp": (start_time + time.time()) / 2
+            "timestamp": time.time()
         }
 
     def analyse_song(self, track_id) -> None:
@@ -43,16 +42,17 @@ class Effects:
         self.effect_func = None
         self.beat = 0
         self.beat_even = False
+        self.epilepsy = True
 
-        # self.effects = [
-        #     [self.effect_0_0, self.effect_0_1, self.effect_0_2],
-        #     [self.effect_1_0, self.effect_1_1, self.effect_1_2],
-        #     [self.effect_2_0, self.effect_2_1, self.effect_2_2],
-        #     [self.effect_3_0, self.effect_3_1, self.effect_3_2]
-        # ]
+        self.effects = [
+            [self.effect_0_0, self.effect_0_1, self.effect_0_2],
+            [self.effect_1_0, self.effect_1_1, self.effect_1_2],
+            [self.effect_2_0, self.effect_2_1, self.effect_2_2],
+            [self.effect_3_0, self.effect_3_1, self.effect_3_2]
+        ]
 
         # debug version for single effect
-        self.effects = [[self.effect_3_1] * 2] * 4
+        # self.effects = [[self.effect_3_1] * 2] * 4
 
         # variables for effects
         self.hue = 0
@@ -83,7 +83,7 @@ class Effects:
     # effect functions
     def effect_idle(self):
         for i in range(0, self.strip.length):
-            self.strip.set(i, self.get_color(i))
+            self.strip.set(i, self.get_color(i, l=0.1))
         self.strip.send()
         self.increment_hue(2)
 
@@ -200,20 +200,20 @@ class Effects:
             self.beat = 0
             self.strip.clear([255, 255, 255])
         else:
-            self.strip.clear(self.get_color(l=0.2 if self.hue % 2 == 0 else 0.1))
+            self.strip.clear(self.get_color(l=0.2 if self.hue % 2 == 0 or not self.epilepsy else 0.1))
 
         self.increment_hue(3)
         self.strip.send()
 
     def effect_3_1(self):
-        self.strip.clear([self.beat * 255] * 3 if self.hue % 2 == 0 else [0, 0, 0])
+        self.strip.clear([self.beat * 255] * 3 if self.hue % 2 == 0 or not self.epilepsy else [0, 0, 0])
 
         self.beat /= 3
         self.increment_hue(1)
         self.strip.send()
 
     def effect_3_2(self):
-        cols = [[255 * self.beat] * 3, self.get_color(l=0.1) if self.hue % 2 == 0 else [0, 0, 0]]
+        cols = [[255 * self.beat] * 3, self.get_color(l=0.1) if self.hue % 2 == 0 or not self.epilepsy else [0, 0, 0]]
         if self.beat_even: cols.reverse()
 
         for i in range(0, self.strip.length, 2):
@@ -288,15 +288,15 @@ class Visualizer:
                 progress = self.get_progress()
 
                 # skip to next beat
-                if self.beat + 1 < len(self.beats) and progress >= self.beat_next:
+                if self.beat is not None and self.beat + 1 < len(self.beats) and progress >= self.beat_next:
                     self.set_beat(self.beat + 1)
 
                 # skip to next section
-                if self.section + 1 < len(self.sections) and progress >= self.section_next:
+                if self.section is not None and self.section + 1 < len(self.sections) and progress >= self.section_next:
                     self.set_section(self.section + 1)
 
                 # skip to next bar
-                if self.bar + 1 < len(self.bars) and progress >= self.bar_next:
+                if self.bar is not None and self.bar + 1 < len(self.bars) and progress >= self.bar_next:
                     self.set_bar(self.bar + 1)
 
                 self.effects.effect_func()
