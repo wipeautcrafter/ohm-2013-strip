@@ -4,11 +4,15 @@ import time
 
 
 class Spotify:
-    def __init__(self, playback_start, playback_update, playback_stop):
+    """
+    Tracks current playback and returns detailed song information.
+    """
+    
+    def __init__(self, on_playback_start=None, on_playback_stop=None, on_playback_seek=None):
         self.song_id = -1
-        self.playback_start = playback_start
-        self.playback_update = playback_update
-        self.playback_stop = playback_stop
+        self.on_playback_start = on_playback_start
+        self.on_playback_stop = on_playback_stop
+        self.on_playback_seek = on_playback_seek
 
         # oauth2 flow with token caching and refreshing
         self.spotify = spotipy.Spotify(auth_manager=spotipy.SpotifyOAuth(
@@ -70,15 +74,15 @@ class Spotify:
         if new_id is not None:
             if new_id != self.song_id:
                 song = self.get_song(new_id)
-                self.playback_start(song)
+                self.on_playback_start(song)
         
-            self.playback_update({
+            self.on_playback_seek({
                 "progress": current["progress_ms"] / 1000,
                 "playing": current["is_playing"],
                 "timestamp": time.time(),
             })
 
         elif new_id != self.song_id:
-                self.playback_stop()
+                self.on_playback_stop()
         
         self.song_id = new_id
