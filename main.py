@@ -226,6 +226,16 @@ class Effects:
 
         self.strip.send()
 
+class Timer:
+    def __init__(self, framerate):
+        self.frametime = 1 / framerate
+        self.last_time = 0
+
+    def sleep(self):
+        # self.frametime - (time.time() - self.last_time)
+        time.sleep(max(self.frametime - time.time() + self.last_time, 0))
+        self.last_time = time.time()
+
 class Visualizer:
     def __init__(self) -> None:
         """
@@ -235,6 +245,7 @@ class Visualizer:
         self.effects = Effects()
         self.playing = False
         self.song = None
+        self.timer = Timer(30)
 
     def set_song(self, song):
         self.song = song
@@ -303,7 +314,8 @@ class Visualizer:
             else:
                 self.effects.effect_idle()
 
-            time.sleep(.05)
+            # time.sleep(.05)
+            self.timer.sleep()
 
 class Sections:
     def __init__(self, sections) -> None:
