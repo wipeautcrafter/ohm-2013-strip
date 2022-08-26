@@ -52,7 +52,7 @@ class Effects:
         ]
 
         # debug version for single effect
-        # self.effects = [[self.effect_3_1] * 2] * 4
+        # self.effects = [[self.effect_3_0] * 2] * 4
 
         # variables for effects
         self.hue = 0
@@ -245,7 +245,7 @@ class Visualizer:
         self.effects = Effects()
         self.playing = False
         self.song = None
-        self.timer = Timer(30)
+        self.timer = Timer(20)
 
     def set_song(self, song):
         self.song = song
