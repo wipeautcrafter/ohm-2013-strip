@@ -9,9 +9,9 @@ import time
 
 class Spotify:
     def __init__(self) -> None:
-        token = spotipy.util.prompt_for_user_token(
-            credentials.username, credentials.scopes, credentials.client_id, credentials.client_secret, credentials.redirect_uri)
-        self.spotify = spotipy.Spotify(auth=token)
+        self.spotify = spotipy.Spotify(auth_manager=spotipy.SpotifyOAuth(
+            client_id=credentials.client_id, client_secret=credentials.client_secret,
+            scope=credentials.scopes, redirect_uri=credentials.redirect_uri))
 
         self.current_song = None
         self.current_analysis = None
