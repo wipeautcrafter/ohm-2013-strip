@@ -35,4 +35,4 @@ redirect_uri = "http://localhost:8888/callback"
 ```
 
 ## Spotify Web API
-To make Spotify intergration work, the Spotify web API is used. If [your application](https://developer.spotify.com/dashboard) credentials are correctly stored in the dedicated configuration file, the script should automatically open an authentication page in your browser. After signing in once, the script should have cached your credentials, and should work without repeating this step.
+To make Spotify intergration work, the Spotify web API is used. If [your application](https://developer.spotify.com/dashboard) credentials are correctly stored in the dedicated configuration file, the script should automatically open an authentication page in your browser.  Make sure that the `redirect uri` in the configuration of your Spotify dashboard matches `http://localhost:8888/callback`. After signing in once, the script should have cached your credentials, and should work without repeating this step.

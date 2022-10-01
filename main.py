@@ -17,21 +17,31 @@ class Spotify:
         self.current_analysis = None
 
     def get_current_song(self) -> None:
-        playback = self.spotify.current_playback()
+        try:
+            playback = self.spotify.current_playback()
 
-        if playback is None or not playback["is_playing"] or playback["item"] is None or playback["item"]["id"] is None:
-            return None
+            if playback is None or not playback["is_playing"] or playback["item"] is None or playback["item"]["id"] is None:
+                return None
 
-        return {
-            "id": playback["item"]["id"],
-            "name": playback["item"]["name"],
-            "progress": playback["progress_ms"],
-            "duration": playback["item"]["duration_ms"],
-            "timestamp": time.time()
-        }
+            return {
+                "id": playback["item"]["id"],
+                "name": playback["item"]["name"],
+                "progress": playback["progress_ms"],
+                "duration": playback["item"]["duration_ms"],
+                "timestamp": time.time()
+            }
+        except Exception as e:
+            print(e)
+            print("AAA")
+            quit(1)
 
     def analyse_song(self, track_id) -> None:
-        return self.spotify.audio_analysis(track_id)
+        try:
+            return self.spotify.audio_analysis(track_id)
+        except Exception as e:
+            print(e)
+            print("AAA")
+            quit(1)
 
 class Effects:
     def __init__(self) -> None:
@@ -52,7 +62,7 @@ class Effects:
         ]
 
         # debug version for single effect
-        # self.effects = [[self.effect_3_0] * 2] * 4
+        # self.effects = [[self.effect_3_3] * 2] * 4
 
         # variables for effects
         self.hue = 0
@@ -247,6 +257,10 @@ class Visualizer:
         self.song = None
         self.timer = Timer(20)
 
+        self.section = -1
+        self.beat = -1
+        self.bar = -1
+
     def set_song(self, song):
         self.song = song
 
@@ -255,18 +269,26 @@ class Visualizer:
 
         # update everything if song is playing
         if playing:
-            self.sections = sections
-            self.beats = beats
-            self.bars = bars
+            if sections is not None: self.sections = sections
+            if beats is not None: self.beats = beats
+            if bars is not None: self.bars = bars
 
             if self.song is not None:
                 progress = self.get_progress()
                 filtered_sections = [i for i, sec in enumerate(self.sections) if sec["start"] <= progress]
                 filtered_beats = [i for i, beat in enumerate(self.beats) if beat["start"] <= progress]
                 filtered_bars = [i for i, bar in enumerate(self.bars) if bar["start"] <= progress]
-                if len(filtered_sections) > 0: self.set_section(filtered_sections[-1])
-                if len(filtered_beats) > 0: self.set_beat(filtered_beats[-1])
-                if len(filtered_bars) > 0: self.set_bar(filtered_bars[-1])
+
+                new_section = filtered_sections[-1] if len(filtered_sections) > 0 else None
+                new_beat = filtered_beats[-1] if len(filtered_beats) > 0 else None
+                new_bar = filtered_bars[-1] if len(filtered_bars) > 0 else None
+
+                if new_section is not None and new_section != self.section:
+                    self.set_section(filtered_sections[-1])
+                if new_beat is not None and new_beat != self.beat:
+                    self.set_beat(filtered_beats[-1])
+                if new_bar is not None and new_bar != self.bar:
+                    self.set_bar(filtered_bars[-1])
             else:
                 self.set_section(0)
                 self.set_beat(0)
@@ -299,15 +321,15 @@ class Visualizer:
                 progress = self.get_progress()
 
                 # skip to next beat
-                if self.beat is not None and self.beat + 1 < len(self.beats) and progress >= self.beat_next:
+                if self.beat is not None and self.beat_next is not None and self.beat + 1 < len(self.beats) and progress >= self.beat_next:
                     self.set_beat(self.beat + 1)
 
                 # skip to next section
-                if self.section is not None and self.section + 1 < len(self.sections) and progress >= self.section_next:
+                if self.section is not None and self.section_next is not None and self.section + 1 < len(self.sections) and progress >= self.section_next:
                     self.set_section(self.section + 1)
 
                 # skip to next bar
-                if self.bar is not None and self.bar + 1 < len(self.bars) and progress >= self.bar_next:
+                if self.bar is not None and self.bar_next is not None and self.bar + 1 < len(self.bars) and progress >= self.bar_next:
                     self.set_bar(self.bar + 1)
 
                 self.effects.effect_func()
@@ -332,10 +354,10 @@ class Sections:
 
         n_per_mode = int(len(sorted_sections) / 4)
         for i, (n, sec) in enumerate(sorted_sections):
-            mode = 3
-            if i < n_per_mode: mode = 0
-            elif i < n_per_mode * 2: mode = 1
-            elif i < n_per_mode * 3: mode = 2
+            mode = 0
+            if i < n_per_mode: mode = 1
+            elif i < n_per_mode * 2: mode = 2
+            elif i < n_per_mode * 3: mode = 3
             self.sections[n]["mode"] = mode
         # for i in range(0, len(self.sections)):
         #     mode = 0
@@ -347,6 +369,10 @@ class Sections:
         #         if (loud_diff > 3 or temp_diff > 4) and i > 1: mode = 3
 
         #     self.sections[i]["mode"] = mode
+
+def clear_terminal():
+    # clear terminal
+    print("\033[2J\033[H", end="", flush=True)
 
 class Watchdog:
     def __init__(self) -> None:
@@ -366,21 +392,26 @@ class Watchdog:
             self.visualizer.set_song(song)
 
             if song is None and self.song_id is not None:
+                clear_terminal()
                 print("Playback paused.")
                 self.visualizer.update(playing=False)
                 self.song_id = None
 
-            elif song is not None and song["id"] != self.song_id:
-                print(f"Now Playing: {song['name']} ({song['id']})")
-                analysis = self.spotify.analyse_song(song["id"])
-                sections = Sections(analysis["sections"]).sections
+            elif song is not None:
+                if song["id"] != self.song_id:
+                    clear_terminal()
+                    print(f"Now Playing: {song['name']} ({song['id']})")
+                    analysis = self.spotify.analyse_song(song["id"])
+                    sections = Sections(analysis["sections"]).sections
 
-                print("Sections:")
-                for s in sections:
-                    print(f"- {s['start']}: mode:{s['mode']} loudness:{s['loudness']} tempo:{s['tempo']} confidence:{s['confidence']}")
+                    print("\nSections:")
+                    for s in sections:
+                        print(f"- {s['start']}: mode:{s['mode']} loudness:{s['loudness']} tempo:{s['tempo']} confidence:{s['confidence']}")
 
-                self.visualizer.update(analysis["beats"], analysis["bars"], sections)
-                self.song_id = song["id"]
+                    self.visualizer.update(analysis["beats"], analysis["bars"], sections)
+                    self.song_id = song["id"]
+                else:
+                    self.visualizer.update()
 
             # start thread
             if not self.thread.is_alive():
