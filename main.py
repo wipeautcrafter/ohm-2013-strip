@@ -1,10 +1,14 @@
-from strip import Strip
-import credentials
-import threading
 import colorsys
-import spotipy
+from math import ceil
 import random
+import threading
 import time
+
+import spotipy
+
+import credentials
+from strip import Strip
+from config import delay, framerate
 
 
 class Spotify:
@@ -28,7 +32,7 @@ class Spotify:
                 "name": playback["item"]["name"],
                 "progress": playback["progress_ms"],
                 "duration": playback["item"]["duration_ms"],
-                "timestamp": time.time()
+                "timestamp": time.time() - delay
             }
         except Exception as e:
             print(e)
@@ -255,7 +259,7 @@ class Visualizer:
         self.effects = Effects()
         self.playing = False
         self.song = None
-        self.timer = Timer(20)
+        self.timer = Timer(framerate)
 
         self.section = -1
         self.beat = -1
@@ -350,14 +354,14 @@ class Sections:
         self.sections = list(filter(lambda l: l["confidence"] > 0.1, sections))
 
         # define modes based on acute changes in loudness and tempo
-        sorted_sections = list(sorted(enumerate(self.sections), key=lambda k: k[1]["loudness"] + k[1]["tempo"]))
+        sorted_sections = list(sorted(enumerate(self.sections), key=lambda k: k[1]["loudness"], reverse=True))
 
-        n_per_mode = int(len(sorted_sections) / 4)
-        for i, (n, sec) in enumerate(sorted_sections):
+        n_per_mode = ceil(len(sorted_sections) / 4)
+        for i, (n, _sec) in enumerate(sorted_sections):
             mode = 0
-            if i < n_per_mode: mode = 1
+            if i < n_per_mode: mode = 3
             elif i < n_per_mode * 2: mode = 2
-            elif i < n_per_mode * 3: mode = 3
+            elif i < n_per_mode * 3: mode = 1
             self.sections[n]["mode"] = mode
         # for i in range(0, len(self.sections)):
         #     mode = 0

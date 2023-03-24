@@ -28,7 +28,7 @@ class Artnet:
   #                       01234567   8   9   a   b   c   d   e   f   10  11
   #                                  op-code protver seq phy universe len
   dataHeader = bytearray(
-      b"Art-Net\x00\x00\x50\x00\x0e\x00\x00\x00\x00\x02\x00")
+      b"Art-Net\x00\x00\x50\x00\x0e\x00\x00\x00\x00\x00\x9C")
       # b"Art-Net\x00\x00\x50\x00\x0e\x00\x00\x00\x00\x00\x33")
   #                    01234567   8   9   a   b   c   d
   #                               op-code protver
