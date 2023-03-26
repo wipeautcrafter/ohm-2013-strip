@@ -255,7 +255,6 @@ class Visualizer:
         """
         led effect controller
         """
-        self.strip = Strip()
         self.effects = Effects()
         self.playing = False
         self.song = None
